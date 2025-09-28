@@ -1,0 +1,49 @@
+---
+- name: Deploy Traffic Management System
+  hosts: traffic_servers
+  become: yes
+  tasks:
+    - name: Update system packages
+      apt:
+        update_cache: yes
+        
+    - name: Install Python dependencies
+      apt:
+        name:
+          - python3-flask
+          - python3-requests
+        state: present
+        
+    - name: Create application directories
+      file:
+        path: "{{ item }}"
+        state: directory
+        owner: ubuntu
+        group: ubuntu
+        mode: '0755'
+      loop:
+        - /home/ubuntu/unity-traffic
+        - /home/ubuntu/traffic-api
+        - /tmp/unity-traffic
+        - /tmp/unity-traffic/commands
+        
+    - name: Copy Unity build files
+      copy:
+        src: files/
+        dest: /home/ubuntu/unity-traffic/
+        owner: ubuntu
+        group: ubuntu
+        mode: preserve
+        
+    - name: Make Unity executable
+      file:
+        path: /home/ubuntu/unity-traffic/server.x86_64
+        mode: '0755'
+        
+    - name: Copy Flask API
+      copy:
+        src: files/traffic_api.py
+        dest: /home/ubuntu/traffic-api/traffic_api.py
+        owner: ubuntu
+        group: ubuntu
+        mode: '0644'
