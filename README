@@ -1,0 +1,46 @@
+# Urban Traffic Management System
+
+Unity-based traffic control system with REST API and automated Ansible deployment.
+
+## Requirements
+- **OS**: Ubuntu 22.04 LTS
+- **Memory**: 4GB RAM minimum
+- **Storage**: 8GB
+- **Network**: SSH (port 22), HTTP (port 5000)
+
+## Quick Deployment
+
+1. **Download files:**
+   ```
+   wget https://raw.githubusercontent.com/IamHermanto/traffic-simulation-deployment/main/deploy.yml
+   wget https://raw.githubusercontent.com/IamHermanto/traffic-simulation-deployment/main/inventory.ini.template
+   ```
+
+2. **Configure server:**
+   ```
+   cp inventory.ini.template inventory.ini
+   # Edit inventory.ini with your server hostname and SSH key path
+   ```
+
+3. **Deploy:**
+   ```
+   ansible-playbook -i inventory.ini deploy.yml
+   ```
+
+## Access
+- **Dashboard**: `http://your-server:5000/dashboard`
+- **API**: `http://your-server:5000/api/status`
+
+## Key API Endpoints
+```
+# System status
+curl http://your-server:5000/api/status
+
+# Control all lights
+curl -X POST http://your-server:5000/api/traffic/lights/set_all_red
+curl -X POST http://your-server:5000/api/traffic/lights/set_all_green
+curl -X POST http://your-server:5000/api/traffic/lights/randomize
+
+# Restore normal operation
+curl -X POST http://your-server:5000/api/traffic/system/restore
+```

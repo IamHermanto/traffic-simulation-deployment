@@ -2,16 +2,21 @@
 - name: Deploy Traffic Management System
   hosts: traffic_servers
   become: yes
+  vars:
+    github_repo: "https://github.com/IamHermanto/traffic-simulation-deployment"
+    
   tasks:
     - name: Update system packages
       apt:
         update_cache: yes
         
-    - name: Install Python dependencies
+    - name: Install required packages
       apt:
         name:
           - python3-flask
           - python3-requests
+          - git
+          - wget
         state: present
         
     - name: Create application directories
@@ -26,11 +31,18 @@
         - /home/ubuntu/traffic-api
         - /tmp/unity-traffic
         - /tmp/unity-traffic/commands
+        - /tmp/deployment
+        
+    - name: Clone repository
+      git:
+        repo: "{{ github_repo }}.git"
+        dest: /tmp/deployment
         
     - name: Copy Unity build files
       copy:
-        src: files/
+        src: /tmp/deployment/unity-build/
         dest: /home/ubuntu/unity-traffic/
+        remote_src: yes
         owner: ubuntu
         group: ubuntu
         mode: preserve
@@ -42,8 +54,14 @@
         
     - name: Copy Flask API
       copy:
-        src: files/traffic_api.py
+        src: /tmp/deployment/traffic_api.py
         dest: /home/ubuntu/traffic-api/traffic_api.py
+        remote_src: yes
         owner: ubuntu
         group: ubuntu
         mode: '0644'
+        
+    - name: Clean up
+      file:
+        path: /tmp/deployment
+        state: absent
