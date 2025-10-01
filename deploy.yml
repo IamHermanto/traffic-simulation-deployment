@@ -6,17 +6,22 @@
     github_repo: "https://github.com/IamHermanto/traffic-simulation-deployment"
     
   tasks:
-    - name: Update system packages
+    - name: Update and upgrade system packages
       apt:
         update_cache: yes
+        upgrade: dist
         
-    - name: Install required packages
+    - name: Install system dependencies
       apt:
         name:
           - python3-flask
           - python3-requests
           - git
-          - wget
+          - libglu1-mesa
+          - libxcursor1
+          - libxrandr2
+          - libxi6
+          - libxinerama1
         state: present
         
     - name: Create application directories
@@ -47,6 +52,12 @@
         group: ubuntu
         mode: preserve
         
+    - name: Set library path for Unity
+      lineinfile:
+        path: /etc/environment
+        line: 'LD_LIBRARY_PATH=/home/ubuntu/unity-traffic:$LD_LIBRARY_PATH'
+        create: yes
+        
     - name: Make Unity executable
       file:
         path: /home/ubuntu/unity-traffic/server.x86_64
@@ -60,6 +71,58 @@
         owner: ubuntu
         group: ubuntu
         mode: '0644'
+        
+    - name: Create systemd service for Unity
+      copy:
+        dest: /etc/systemd/system/unity-traffic.service
+        content: |
+          [Unit]
+          Description=Unity Traffic System
+          After=network.target
+          
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/unity-traffic
+          Environment="LD_LIBRARY_PATH=/home/ubuntu/unity-traffic"
+          ExecStart=/home/ubuntu/unity-traffic/server.x86_64 --debug
+          Restart=always
+          
+          [Install]
+          WantedBy=multi-user.target
+          
+    - name: Create systemd service for Flask API
+      copy:
+        dest: /etc/systemd/system/traffic-api.service
+        content: |
+          [Unit]
+          Description=Traffic Management API
+          After=unity-traffic.service
+          Requires=unity-traffic.service
+          
+          [Service]
+          Type=simple
+          User=ubuntu
+          WorkingDirectory=/home/ubuntu/traffic-api
+          ExecStart=/usr/bin/python3 traffic_api.py
+          Restart=always
+          
+          [Install]
+          WantedBy=multi-user.target
+          
+    - name: Enable and start Unity service
+      systemd:
+        name: unity-traffic
+        enabled: yes
+        state: started
+        daemon_reload: yes
+        
+    - name: Enable and start API service
+      systemd:
+        name: traffic-api
+        enabled: yes
+        state: started
+        daemon_reload: yes
         
     - name: Clean up
       file:
