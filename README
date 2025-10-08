@@ -1,46 +1,79 @@
-# Urban Traffic Management System
-
-Unity-based traffic control system with REST API and automated Ansible deployment.
 
 ## Requirements
 - **OS**: Ubuntu 22.04 LTS
+- **Machine Type**: t3.medium or equivalent
 - **Memory**: 4GB RAM minimum
 - **Storage**: 8GB
 - **Network**: SSH (port 22), HTTP (port 5000)
 
-## Quick Deployment
+## Automated Deployment
 
-1. **Download files:**
-   ```
+### Prerequisites
+Install Ansible on your local machine:
+
+sudo apt update && sudo apt install ansible -y
+
+
+### Deploy (Completely Hands-Free)
+
+1. **Download deployment files:**
+
    wget https://raw.githubusercontent.com/IamHermanto/traffic-simulation-deployment/main/deploy.yml
-   wget https://raw.githubusercontent.com/IamHermanto/traffic-simulation-deployment/main/inventory.ini.template
-   ```
+
+   wget https://raw.githubusercontent.com/IamHermanto/traffic-simulation-deployment/main/inventory.yml.template
+
 
 2. **Configure server:**
-   ```
-   cp inventory.ini.template inventory.ini
-   # Edit inventory.ini with your server hostname and SSH key path
-   ```
 
-3. **Deploy:**
-   ```
-   ansible-playbook -i inventory.ini deploy.yml
-   ```
+   cp inventory.yml.template inventory.yml
+   nano inventory.yml
+   
+   Update the following in `inventory.yml`:
+   - Replace `your-server-hostname.com` with your actual server hostname
+   - Replace `path/to/your/key.pem` with the path to your SSH key file
+
+3. **Run deployment:**
+
+   ansible-playbook -i inventory.yml deploy.yml
+   
 
 ## Access
-- **Dashboard**: `http://your-server:5000/dashboard`
-- **API**: `http://your-server:5000/api/status`
 
-## Key API Endpoints
+After deployment completes, the system is immediately accessible:
+
+- **Web Dashboard**: `http://your-server:5000/dashboard`
+- **API Status**: `http://your-server:5000/api/status`
+
+## API Endpoints
+
+### Check System Status
 ```
-# System status
 curl http://your-server:5000/api/status
+curl http://your-server:5000/api/traffic/lights
+```
 
-# Control all lights
+### Control Operations
+
+# Emergency stop (all red)
 curl -X POST http://your-server:5000/api/traffic/lights/set_all_red
+
+# Clear all intersections (all green)
 curl -X POST http://your-server:5000/api/traffic/lights/set_all_green
+
+# System test (randomize lights)
 curl -X POST http://your-server:5000/api/traffic/lights/randomize
 
-# Restore normal operation
+# Restore normal automatic operation
 curl -X POST http://your-server:5000/api/traffic/system/restore
-```
+
+
+## Services
+
+The system runs as systemd services that start automatically on boot:
+- `unity-traffic.service` - Unity traffic simulation server
+- `traffic-api.service` - Flask REST API server
+
+Check service status:
+
+sudo systemctl status unity-traffic
+sudo systemctl status traffic-api
