@@ -52,12 +52,6 @@
         group: ubuntu
         mode: preserve
         
-    - name: Set library path for Unity
-      lineinfile:
-        path: /etc/environment
-        line: 'LD_LIBRARY_PATH=/home/ubuntu/unity-traffic:$LD_LIBRARY_PATH'
-        create: yes
-        
     - name: Make Unity executable
       file:
         path: /home/ubuntu/unity-traffic/server.x86_64
@@ -72,6 +66,18 @@
         group: ubuntu
         mode: '0644'
         
+    - name: Create startup script for Unity
+      copy:
+        dest: /home/ubuntu/unity-traffic/start.sh
+        content: |
+          #!/bin/bash
+          cd /home/ubuntu/unity-traffic
+          export LD_LIBRARY_PATH=/home/ubuntu/unity-traffic:$LD_LIBRARY_PATH
+          ./server.x86_64 --debug
+        mode: '0755'
+        owner: ubuntu
+        group: ubuntu
+        
     - name: Create systemd service for Unity
       copy:
         dest: /etc/systemd/system/unity-traffic.service
@@ -84,8 +90,7 @@
           Type=simple
           User=ubuntu
           WorkingDirectory=/home/ubuntu/unity-traffic
-          Environment="LD_LIBRARY_PATH=/home/ubuntu/unity-traffic"
-          ExecStart=/home/ubuntu/unity-traffic/server.x86_64 --debug
+          ExecStart=/home/ubuntu/unity-traffic/start.sh
           Restart=always
           
           [Install]
