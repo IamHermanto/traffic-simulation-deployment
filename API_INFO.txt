@@ -1,0 +1,231 @@
+# Traffic System API Documentation
+
+## Base URL
+`http://your-server:5000`
+
+**Dashboard:** `http://your-server:5000/dashboard`
+
+---
+
+## Quick Start
+
+```bash
+# Check system status
+curl http://localhost:5000/api/status
+
+# Get all traffic lights
+curl http://localhost:5000/api/traffic/lights
+
+# Control a specific light
+curl -X POST http://localhost:5000/api/traffic/lights/light_88_neg72_0/set \
+  -H "Content-Type: application/json" \
+  -d '{"status": "red"}'
+```
+
+---
+
+## Endpoints
+
+### System Status
+
+#### Get System Status
+```
+GET /api/status
+```
+
+**Response:**
+```json
+{
+  "status": "running",
+  "traffic_system_connected": true,
+  "total_lights": 16
+}
+```
+
+---
+
+### Traffic Lights
+
+#### Get All Lights
+```
+GET /api/traffic/lights
+```
+
+**Response:**
+```json
+{
+  "lights": [
+    {
+      "id": "light_88_neg72_0",
+      "name": "TrafficSystemTrafficLight1-1a ( V2 )",
+      "status": "red",
+      "position": {"x": 87.55, "y": -0.09, "z": -72.33},
+      "controlMode": "automatic"
+    }
+  ],
+  "total_lights": 16
+}
+```
+
+#### Get Specific Light
+```
+GET /api/traffic/lights/<light_id>
+```
+
+#### List Light IDs
+```
+GET /api/traffic/lights/list
+```
+
+**Response:**
+```json
+{
+  "light_ids": ["light_88_neg72_0", "light_79_neg55_1"],
+  "total_lights": 16
+}
+```
+
+---
+
+### Control Lights
+
+#### Set Light Status
+```
+POST /api/traffic/lights/<light_id>/set
+```
+
+**Body:**
+```json
+{
+  "status": "green"
+}
+```
+
+Valid: `red`, `yellow`, `green`
+
+**Example:**
+```bash
+curl -X POST http://localhost:5000/api/traffic/lights/light_88_neg72_0/set \
+  -H "Content-Type: application/json" \
+  -d '{"status": "green"}'
+```
+
+#### Set Control Mode
+```
+POST /api/traffic/lights/<light_id>/mode
+```
+
+**Body:**
+```json
+{
+  "mode": "api_controlled"
+}
+```
+
+Valid modes: `automatic`, `manual`, `api_controlled`
+
+#### Set Green Duration
+```
+POST /api/traffic/lights/<light_id>/duration
+```
+
+**Body:**
+```json
+{
+  "duration": 15
+}
+```
+
+---
+
+### Attack Simulation
+
+#### Simulate Attack
+```
+POST /api/traffic/attack/chaos
+```
+
+**Body:**
+```json
+{
+  "type": "all_red",
+  "duration": 30
+}
+```
+
+**Attack types:**
+- `all_red` - Set all lights to red
+- `all_green` - Set all lights to green  
+- `random_lights` - Random light changes
+
+**Example:**
+```bash
+curl -X POST http://localhost:5000/api/traffic/attack/chaos \
+  -H "Content-Type: application/json" \
+  -d '{"type": "all_red", "duration": 30}'
+```
+
+#### Restore Normal Operation
+```
+POST /api/traffic/restore
+```
+
+Restores all lights to automatic mode.
+
+---
+
+## Python Example
+
+```python
+import requests
+
+API = "http://localhost:5000"
+
+# Get all lights
+lights = requests.get(f"{API}/api/traffic/lights").json()['lights']
+light_id = lights[0]['id']
+
+# Set to API control
+requests.post(f"{API}/api/traffic/lights/{light_id}/mode",
+              json={"mode": "api_controlled"})
+
+# Change to green
+requests.post(f"{API}/api/traffic/lights/{light_id}/set",
+              json={"status": "green"})
+
+# Restore automatic
+requests.post(f"{API}/api/traffic/restore")
+```
+
+---
+
+## Common Issues
+
+**API returns 503:**
+```bash
+# Check if Unity is running
+sudo systemctl status unity-traffic
+```
+
+**Commands not working:**
+```bash
+# Set light to API control mode first
+curl -X POST http://localhost:5000/api/traffic/lights/<light_id>/mode \
+  -H "Content-Type: application/json" \
+  -d '{"mode": "api_controlled"}'
+```
+
+**Dashboard not loading:**
+```bash
+# Check API service
+sudo systemctl status traffic-api
+```
+
+---
+
+## Response Codes
+
+- `200` - Success
+- `400` - Invalid parameters
+- `404` - Light not found
+- `503` - Unity system not connected
